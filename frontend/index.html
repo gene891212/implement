@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 maximum-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css" />
+    <!-- Import Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@next"></script>
+    <!-- Import component library -->
+    <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+    <!-- Import MQTT.js -->
+    <script src="https://unpkg.com/mqtt@4.3.2/dist/mqtt.min.js"></script>
+
+    <style>
+        .container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .el-header {
+            text-align: center;
+            color: var(--el-text-color-primary);
+            line-height: 60px;
+        }
+
+        .text {
+            font-size: 14px;
+        }
+
+        .item {
+            margin-bottom: 18px;
+        }
+
+        .box-card {
+            max-width: 480px;
+        }
+    </style>
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <el-container>
+            <el-header>
+                <span>Card name</span>
+            </el-header>
+            <el-row justify="center">
+                <el-col :xs="23" :sm="16" :md="16">
+                    <el-form :label-position="labelPosition" label-width="120px" :model="form">
+                        <el-form-item label="Name">
+                            <el-input v-model="form.name"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="Activity form">
+                            <el-input v-model="form.type"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="Activity form">
+                            <el-input v-model="form.type"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="Activity form">
+                            <el-input v-model="form.type"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="Notification time">
+                            <el-row>
+                                <el-col :span="12" justify="space-between">
+                                    <el-time-select
+                                        v-model="value"
+                                        start="00:00"
+                                        step="00:15"
+                                        end="23:45"
+                                        placeholder="Select time">
+                                    </el-time-select>
+                                </el-col>
+                                <el-col :span="12">
+                                    <el-time-select
+                                        v-model="value"
+                                        start="00:00"
+                                        step="00:15"
+                                        end="23:45"
+                                        placeholder="Select time">
+                                    </el-time-select>
+                                </el-col>
+                            </el-row>
+                        </el-form-item>
+
+                        <el-form-item>
+                            <el-button type="primary" @click="submitForm('ruleForm')">Save</el-button>
+                            <el-button @click="resetForm('ruleForm')">Cancel</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-col>
+            </el-row>
+        </el-container>
+    </div>
+
+    <script>
+        const App = {
+            created() {
+                const client = mqtt.connect("ws://192.168.0.200:9001") // you add a ws:// url here
+                client.on('connect', function () {
+                    client.subscribe('test', function (err) {
+                        if (!err) {
+                            client.publish('presence', 'Hello mqtt')
+                        }
+                    })
+                })
+
+                client.on('message', function (topic, message) {
+                    // message is Buffer
+                    console.log(message.toString())
+                    client.end()
+                })
+            },
+            data() {
+                return {
+                    counter: 0,
+                    labelPosition: 'top',
+                    form: {
+                        name: '',
+                        region: '',
+                        type: '',
+                    },
+                    value: '',
+                    value2: new Date(),
+                }
+            },
+            methods: {
+            }
+        }
+        const app = Vue.createApp(App)
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>
