@@ -49,51 +49,29 @@
             </el-header>
             <el-row justify="center">
                 <el-col :xs="23" :sm="16" :md="16">
-                    <el-form :label-position="labelPosition" label-width="120px" :model="form">
-                        <el-form-item label="Name">
-                            <el-input v-model="form.name"></el-input>
-                        </el-form-item>
-
-                        <el-form-item label="Activity form">
-                            <el-input v-model="form.type"></el-input>
-                        </el-form-item>
-
-                        <el-form-item label="Activity form">
-                            <el-input v-model="form.type"></el-input>
-                        </el-form-item>
-
-                        <el-form-item label="Activity form">
-                            <el-input v-model="form.type"></el-input>
-                        </el-form-item>
-
-                        <el-form-item label="Notification time">
-                            <el-row>
-                                <el-col :span="12" justify="space-between">
-                                    <el-time-select
-                                        v-model="value"
-                                        start="00:00"
-                                        step="00:15"
-                                        end="23:45"
-                                        placeholder="Select time">
-                                    </el-time-select>
-                                </el-col>
-                                <el-col :span="12">
-                                    <el-time-select
-                                        v-model="value"
-                                        start="00:00"
-                                        step="00:15"
-                                        end="23:45"
-                                        placeholder="Select time">
-                                    </el-time-select>
-                                </el-col>
-                            </el-row>
-                        </el-form-item>
-
-                        <el-form-item>
-                            <el-button type="primary" @click="submitForm('ruleForm')">Save</el-button>
-                            <el-button @click="resetForm('ruleForm')">Cancel</el-button>
-                        </el-form-item>
-                    </el-form>
+                    <el-row>
+                        <el-col :span="12">
+                            <el-card>
+                                <template #header>
+                                    <div class="card-header">
+                                        <span>Oxygen Saturation(%)</span>
+                                    </div>
+                                </template>
+                                <el-row justify="center">
+                                    <el-progress type="dashboard" :percentage="percentage" :color="colors" />
+                                </el-row>
+                            </el-card>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-card>
+                                <template #header>
+                                    <div class="card-header">
+                                        <span>Card name</span>
+                                    </div>
+                                </template>
+                            </el-card>
+                        </el-col>
+                    </el-row>
                 </el-col>
             </el-row>
         </el-container>
@@ -102,32 +80,42 @@
     <script>
         const App = {
             created() {
+
+            },
+            mounted() {
                 const client = mqtt.connect("ws://192.168.0.200:9001") // you add a ws:// url here
                 client.on('connect', function () {
                     client.subscribe('test', function (err) {
                         if (!err) {
-                            client.publish('presence', 'Hello mqtt')
+                            client.publish('test', 'Hello mqtt')
                         }
                     })
                 })
 
-                client.on('message', function (topic, message) {
+                // client.on('message', function (topic, message) {
+                //     // message is Buffer
+                //     console.log(message.toString())
+                //     this.percentage = message
+                //     // client.end()
+                // })
+                client.on('message', (topic, message) => {
                     // message is Buffer
                     console.log(message.toString())
-                    client.end()
+                    this.percentage = parseFloat(message.toString())
+                    // client.end()
                 })
             },
             data() {
                 return {
                     counter: 0,
-                    labelPosition: 'top',
-                    form: {
-                        name: '',
-                        region: '',
-                        type: '',
-                    },
-                    value: '',
-                    value2: new Date(),
+                    percentage: 0,
+                    colors: [
+                        { color: '#f56c6c', percentage: 20 },
+                        { color: '#e6a23c', percentage: 40 },
+                        { color: '#5cb87a', percentage: 60 },
+                        { color: '#1989fa', percentage: 80 },
+                        { color: '#6f7ad3', percentage: 100 },
+                    ]
                 }
             },
             methods: {
