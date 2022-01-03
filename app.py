@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_mqtt import Mqtt
 
 from models import OxygenData, db
@@ -15,12 +15,27 @@ mqtt = Mqtt(app)
 db.init_app(app)
 
 
-@app.route('/api/oxygen/<int:oxygen>')
+@app.route('/api/oxygen/<int:oxygen>', methods=["POST"])
+@app.route('/api/oxygen/<float:oxygen>', methods=["POST"])
 def save_oxygen(oxygen):
     data = OxygenData(value=oxygen)
     db.session.add(data)
     db.session.commit()
-    return jsonify(data.as_dict())
+    return data.as_dict()
+
+
+@app.route('/api/oxygen', methods=["GET"])
+@app.route('/api/oxygen/', methods=["GET"])
+def get_oxygen():
+    data = OxygenData.query.order_by(-OxygenData.id).first()
+    return data.as_dict()
+
+
+@app.route('/api/oxygens', methods=["GET"])
+def get_oxygens():
+    data = OxygenData.query.all()
+    print(data)
+    return {"oxygens": [i.as_dict() for i in data]}
 
 
 @app.route('/')
@@ -40,4 +55,4 @@ def handle_mqtt_message(client, userdata, message):
         topic=message.topic,
         payload=message.payload.decode()
     )
-    print(client, userdata, message)
+    print(data)
