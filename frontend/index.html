@@ -14,28 +14,15 @@
     <script src="https://unpkg.com/mqtt@4.3.2/dist/mqtt.min.js"></script>
 
     <style>
-        .container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
         .el-header {
             text-align: center;
             color: var(--el-text-color-primary);
             line-height: 60px;
         }
 
-        .text {
-            font-size: 14px;
-        }
-
-        .item {
-            margin-bottom: 18px;
-        }
-
-        .box-card {
-            max-width: 480px;
+        .card-header {
+            text-align: center;
+            color: var(--el-text-color-primary);
         }
     </style>
     <title>Document</title>
@@ -49,8 +36,8 @@
             </el-header>
             <el-row justify="center">
                 <el-col :xs="23" :sm="16" :md="16">
-                    <el-row>
-                        <el-col :span="12">
+                    <el-row :gutter="20">
+                        <el-col :xs="24" :sm="12">
                             <el-card>
                                 <template #header>
                                     <div class="card-header">
@@ -58,17 +45,38 @@
                                     </div>
                                 </template>
                                 <el-row justify="center">
+                                    <el-progress type="dashboard" :percentage="oxygenData" :color="colors" />
+                                </el-row>
+                            </el-card>
+                        </el-col>
+                        <el-col :xs="24" :sm="12">
+                            <el-card>
+                                <template #header>
+                                    <div class="card-header">
+                                        <span>Something</span>
+                                    </div>
+                                </template>
+                                <el-row justify="center">
                                     <el-progress type="dashboard" :percentage="percentage" :color="colors" />
                                 </el-row>
                             </el-card>
                         </el-col>
-                        <el-col :span="12">
+                        <el-col>
                             <el-card>
                                 <template #header>
                                     <div class="card-header">
-                                        <span>Card name</span>
+                                        <span>Control</span>
                                     </div>
                                 </template>
+                                <el-form>
+                                    <el-form-item label="幫浦開關">
+                                        <el-switch v-model="form.pump">
+                                    </el-form-item>
+                                    <el-form-item label="壓力大小">
+                                        <!-- <el-slider v-model="form.stress" :step="10" show-stops show-input> </el-slider> -->
+                                        <el-input-number v-model="form.stress" :min="1" :max="10"/>
+                                    </el-form-item>
+                                </el-form>
                             </el-card>
                         </el-col>
                     </el-row>
@@ -83,42 +91,42 @@
 
             },
             mounted() {
-                const client = mqtt.connect("ws://192.168.0.200:9001") // you add a ws:// url here
-                client.on('connect', function () {
-                    client.subscribe('test', function (err) {
-                        if (!err) {
-                            client.publish('test', 'Hello mqtt')
-                        }
-                    })
-                })
-
-                // client.on('message', function (topic, message) {
-                //     // message is Buffer
-                //     console.log(message.toString())
-                //     this.percentage = message
-                //     // client.end()
-                // })
-                client.on('message', (topic, message) => {
-                    // message is Buffer
-                    console.log(message.toString())
-                    this.percentage = parseFloat(message.toString())
-                    // client.end()
-                })
+                this.initMQTTClient();
             },
             data() {
                 return {
                     counter: 0,
+                    oxygenData: 0,
                     percentage: 0,
                     colors: [
-                        { color: '#f56c6c', percentage: 20 },
-                        { color: '#e6a23c', percentage: 40 },
-                        { color: '#5cb87a', percentage: 60 },
-                        { color: '#1989fa', percentage: 80 },
-                        { color: '#6f7ad3', percentage: 100 },
-                    ]
+                        { color: '#f56c6c', percentage: 80 },
+                        { color: '#5cb87a', percentage: 100 },
+                    ],
+                    form: {
+                        bump: false,
+                        stress: 5,
+                    }
                 }
             },
             methods: {
+                initMQTTClient() {
+                    const client = mqtt.connect("ws://192.168.0.200:9001") // you add a ws:// url here
+                    client.on('connect', function () {
+                        client.subscribe('test2', function (err) {
+                            if (!err) {
+                                console.log('Work');
+                            }
+                        })
+                    })
+
+                    client.on('message', (topic, message) => {
+                        // message is Buffer
+                        console.log(message.toString())
+                        this.oxygenData = parseFloat(message.toString())
+                        // this.percentage = parseFloat(message.toString())
+                        this.percentage = 30
+                    })
+                }
             }
         }
         const app = Vue.createApp(App)

@@ -40,13 +40,13 @@ def get_oxygens():
 
 @app.route('/')
 def hello():
-    mqtt.publish('test', 'from flask')
+    mqtt.publish('test2', 'from flask')
     return 'Hello, World!'
 
 
 @mqtt.on_connect()
 def handle_connect(client, userdata, flags, rc):
-    mqtt.subscribe('test')
+    mqtt.subscribe('test2')
 
 
 @mqtt.on_message()

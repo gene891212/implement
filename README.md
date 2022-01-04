@@ -32,3 +32,4 @@ pipenv install
 
 - [MQTT basic setting](https://blog.gtwang.org/iot/raspberry-pi/raspberry-pi-mosquitto-mqtt-broker-iot-integration/)
 - [MQTT websocket setting](http://www.steves-internet-guide.com/mqtt-websockets/)
+- [MQTT multiple listener setting](http://www.steves-internet-guide.com/mossquitto-conf-file/)
