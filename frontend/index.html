@@ -122,7 +122,9 @@
                     client.on('message', (topic, message) => {
                         // message is Buffer
                         console.log(message.toString())
-                        this.oxygenData = parseFloat(message.toString())
+                        let data = message.toString()
+                        let jsonData = JSON.parse(data)
+                        this.oxygenData = jsonData.oxygen
                         // this.percentage = parseFloat(message.toString())
                         this.percentage = 30
                     })
