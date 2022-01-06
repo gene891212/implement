@@ -1,11 +1,16 @@
 #include <WiFi.h>
-#include <MQTTPubSubClient.h>
 
-const char* ssid = "XVALEE";
-const char* pass = "va6333le";
-char buf[40];
+#include <MQTTPubSubClient.h>
+ 
+
 WiFiClient client;
 MQTTPubSubClient mqtt;
+
+const char * ssid = "XVALEE";
+const char * pass = "va6333le";
+const char * controlTopic = "control";
+const char * biomedicalTopic = "biomedical";
+char buf[40];
 
 void setup() {
   Serial.begin(115200);
@@ -36,13 +41,14 @@ void setup() {
   Serial.println(" connected!");
 
   // subscribe topic and callback which is called when test2 has come
-  mqtt.subscribe("test2", [](const String & payload, const size_t size) {
+  mqtt.subscribe(controlTopic, [](const String & payload,
+    const size_t size) {
     Serial.println(payload);
   });
 }
 
 void loop() {
-  mqtt.update();  // should be called
+  mqtt.update(); // should be called
 
   // publish message
   //    static uint32_t prev_ms = millis();
@@ -51,6 +57,6 @@ void loop() {
   //        mqtt.publish("/hello", "world");
   //    }
   sprintf(buf, "{\"oxygen\": \"%d\"}", random(30, 100));
-  mqtt.publish("test2", buf);
+  mqtt.publish(biomedicalTopic, buf);
   delay(1000);
 }

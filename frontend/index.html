@@ -70,11 +70,14 @@
                                 </template>
                                 <el-form>
                                     <el-form-item label="幫浦開關">
-                                        <el-switch v-model="form.pump">
+                                        <el-switch v-model="controlData.bump">
                                     </el-form-item>
                                     <el-form-item label="壓力大小">
                                         <!-- <el-slider v-model="form.stress" :step="10" show-stops show-input> </el-slider> -->
-                                        <el-input-number v-model="form.stress" :min="1" :max="10"/>
+                                        <el-input-number
+                                            v-model="controlData.stress"
+                                            :min="1"
+                                            :max="10" />
                                     </el-form-item>
                                 </el-form>
                             </el-card>
@@ -87,11 +90,8 @@
 
     <script>
         const App = {
-            created() {
-
-            },
             mounted() {
-                this.initMQTTClient();
+                this.initMQTTClient()
             },
             data() {
                 return {
@@ -102,32 +102,47 @@
                         { color: '#f56c6c', percentage: 80 },
                         { color: '#5cb87a', percentage: 100 },
                     ],
-                    form: {
+                    controlData: {
                         bump: false,
                         stress: 5,
-                    }
+                    },
+                    connection: {
+                        host: '192.168.0.200',
+                        port: 9001,
+                        controlTopic: 'control',
+                        biomedicalTopic: 'biomedical',
+                    },
                 }
             },
             methods: {
                 initMQTTClient() {
-                    const client = mqtt.connect("ws://192.168.0.200:9001") // you add a ws:// url here
-                    client.on('connect', function () {
-                        client.subscribe('test2', function (err) {
-                            if (!err) {
-                                console.log('Work');
-                            }
-                        })
+                    let data = this.controlData
+                    const { host, port, controlTopic, biomedicalTopic } = this.connection
+                    const connectUrl = `ws://${host}:${port}`
+                    this.client = mqtt.connect(connectUrl)
+                    this.client.on('connect', () => {
+                        this.client.subscribe(biomedicalTopic)
+                        this.client.publish(controlTopic, JSON.stringify(data))
                     })
 
-                    client.on('message', (topic, message) => {
-                        // message is Buffer
-                        console.log(message.toString())
-                        let data = message.toString()
-                        let jsonData = JSON.parse(data)
-                        this.oxygenData = jsonData.oxygen
-                        // this.percentage = parseFloat(message.toString())
+                    this.client.on('message', (topic, message) => {
+                        // parse oxygen data
+                        let jsonData = JSON.parse(message.toString())
+                        this.oxygenData = parseFloat(jsonData.oxygen)
                         this.percentage = 30
                     })
+                },
+            },
+            watch: {
+                controlData: {
+                    handler: function (val) {
+                        this.client.publish(
+                            this.connection.controlTopic,
+                            JSON.stringify(this.controlData)
+                        )
+                        console.log(val);
+                    },
+                    deep: true,
                 }
             }
         }
