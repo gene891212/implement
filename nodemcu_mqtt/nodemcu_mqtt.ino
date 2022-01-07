@@ -1,15 +1,19 @@
 #include <WiFi.h>
 
 #include <MQTTPubSubClient.h>
- 
+
+#include <ArduinoJson.h>
 
 WiFiClient client;
 MQTTPubSubClient mqtt;
+DynamicJsonDocument doc(200);
 
 const char * ssid = "XVALEE";
 const char * pass = "va6333le";
 const char * controlTopic = "control";
 const char * biomedicalTopic = "biomedical";
+int stress;
+bool pump;
 char buf[40];
 
 void setup() {
@@ -41,15 +45,17 @@ void setup() {
   Serial.println(" connected!");
 
   // subscribe topic and callback which is called when test2 has come
-  mqtt.subscribe(controlTopic, [](const String & payload,
-    const size_t size) {
-    Serial.println(payload);
+  mqtt.subscribe(controlTopic, [](const String & payload, const size_t size) {
+    deserializeJson(doc, payload);
+    pump = doc["pump"];
+    stress = doc["stress"];
+    // Serial.println(doc["pump"].as<bool>());
+    serializeJson(doc, Serial);
   });
 }
 
 void loop() {
   mqtt.update(); // should be called
-
   // publish message
   //    static uint32_t prev_ms = millis();
   //    if (millis() > prev_ms + 1000) {

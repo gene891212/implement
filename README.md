@@ -2,7 +2,7 @@
 
 ## Installation
 
-MQTT
+MQTT broker: Eclipse Mosquitto
 
 ```bash
 sudo apt-get install mosquitto mosquitto-clients
@@ -22,13 +22,14 @@ protocol websockets
 Python package
 
 ```bash
+pip3 install pipenv
 pipenv install
 ```
 
 Arduino libraries
 
 - MQTTPubSubClient
-
+- ArduinoJson
 
 ## Usage
 

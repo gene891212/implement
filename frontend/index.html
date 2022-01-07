@@ -70,7 +70,7 @@
                                 </template>
                                 <el-form>
                                     <el-form-item label="幫浦開關">
-                                        <el-switch v-model="controlData.bump">
+                                        <el-switch v-model="controlData.pump">
                                     </el-form-item>
                                     <el-form-item label="壓力大小">
                                         <!-- <el-slider v-model="form.stress" :step="10" show-stops show-input> </el-slider> -->
@@ -103,7 +103,7 @@
                         { color: '#5cb87a', percentage: 100 },
                     ],
                     controlData: {
-                        bump: false,
+                        pump: false,
                         stress: 5,
                     },
                     connection: {
