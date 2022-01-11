@@ -13,11 +13,18 @@ PulseOximeter pox;
 
 const char * ssid = "XVALEE";
 const char * pass = "va6333le";
+
 const char * controlTopic = "control";
 const char * biomedicalTopic = "biomedical";
+
+// pin define
+const int stressSensor = A0;
+const int pump = 2;
+const int reliefValve = 3;
+
+int stressSensorValue = 0;
 int stress;
-int stressSensor = A0;
-bool pump;
+bool start;
 char buf[40];
 
 void setup() {
@@ -48,19 +55,9 @@ void setup() {
   }
   Serial.println(" connected!");
 
-  // subscribe topic and callback which is called when test2 has come
-  mqtt.subscribe(controlTopic, [](const String & payload,
-    const size_t size) {
-    deserializeJson(doc, payload);
-    pump = doc["pump"];
-    stress = doc["stress"];
-    // Serial.println(doc["pump"].as<bool>());
-    // serializeJson(doc, Serial);
-  });
-
   // initial pump pin output
-  pinMode(4, OUTPUT);
-  digitalWrite(4, LOW);
+  pinMode(pump, OUTPUT);
+  digitalWrite(pump, LOW);
 
   // Initialize the PulseOximeter instance
   // Failures are generally due to an improper I2C wiring, missing power supply
@@ -73,6 +70,15 @@ void setup() {
   }
   // Register a callback for the beat detection
   // pox.setOnBeatDetectedCallback(onBeatDetected);
+
+  // subscribe topic and callback which is called when test2 has come
+  mqtt.subscribe(controlTopic, [](const String & payload, const size_t size) {
+    deserializeJson(doc, payload);
+    start = doc["start"];
+    stress = doc["stress"];
+    // Serial.println(doc["pump"].as<bool>());
+    // serializeJson(doc, Serial);
+  });
 }
 
 void loop() {
@@ -85,7 +91,18 @@ void loop() {
     sprintf(buf, "{\"oxygen\": %d, \"heartRate\": %d}", pox.getSpO2(), pox.getHeartRate());
     mqtt.publish(biomedicalTopic, buf);
 
-    // calibration stress sensor data
-    stressSensorRead = analogRead(stressSensor) - 548) * 37.5;
+    // calibration stress sensor value
+    stressSensorValue = analogRead(stressSensor) - 548) * 37.5;
+
+    // process logic when training is start
+    if (start) {
+      digitalWrite(reliefValve, LOW);
+      // open the pump when stress not enough
+      if (stressSensorValue != stress) {
+        digitalWrite(pump, HIGH);
+      }
+    } else {
+      digitalWrite(reliefValve, HIGH);
+    }
   }
 }

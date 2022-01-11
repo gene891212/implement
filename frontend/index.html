@@ -45,7 +45,10 @@
                                     </div>
                                 </template>
                                 <el-row justify="center">
-                                    <el-progress type="dashboard" :percentage="oxygenData" :color="colors" />
+                                    <el-progress
+                                        type="dashboard"
+                                        :percentage="oxygenData"
+                                        :color="colors" />
                                 </el-row>
                             </el-card>
                         </el-col>
@@ -53,11 +56,20 @@
                             <el-card>
                                 <template #header>
                                     <div class="card-header">
-                                        <span>Something</span>
+                                        <span>Heart Rate(bpm)</span>
                                     </div>
                                 </template>
                                 <el-row justify="center">
-                                    <el-progress type="dashboard" :percentage="percentage" :color="colors" />
+                                    <el-progress
+                                        type="dashboard"
+                                        :percentage="heartRateData / calibrate"
+                                        :color="colors">
+                                        <template #default="{ percentage }">
+                                            <span>
+                                                {{ percentage * calibrate }} bpm
+                                            </span>
+                                        </template>
+                                    </el-progress>
                                 </el-row>
                             </el-card>
                         </el-col>
@@ -69,11 +81,10 @@
                                     </div>
                                 </template>
                                 <el-form>
-                                    <el-form-item label="幫浦開關">
-                                        <el-switch v-model="controlData.pump">
+                                    <el-form-item label="開始訓練">
+                                        <el-switch v-model="controlData.start">
                                     </el-form-item>
                                     <el-form-item label="壓力大小">
-                                        <!-- <el-slider v-model="form.stress" :step="10" show-stops show-input> </el-slider> -->
                                         <el-input-number
                                             v-model="controlData.stress"
                                             :min="1"
@@ -90,6 +101,20 @@
 
     <script>
         const App = {
+            created() {
+                // demo the data from nodeMCU
+                this.timer = window.setInterval(() => {
+                    this.client.publish(
+                        this.connection.biomedicalTopic,
+                        JSON.stringify(
+                            {
+                                'oxygen': Math.floor(Math.random() * 30),
+                                'heartRate': Math.floor(Math.random() * 160),
+                            }
+                        )
+                    )
+                }, 1000)
+            },
             mounted() {
                 this.initMQTTClient()
             },
@@ -97,18 +122,26 @@
                 return {
                     counter: 0,
                     oxygenData: 0,
-                    percentage: 0,
+                    heartRateData: 0,
+                    calibrate: 1.6,
                     colors: [
                         { color: '#f56c6c', percentage: 80 },
                         { color: '#5cb87a', percentage: 100 },
                     ],
                     controlData: {
-                        pump: false,
+                        start: false,
                         stress: 5,
                     },
+                    // connection: {
+                    //     host: '192.168.0.200',
+                    //     port: 9001,
+                    //     controlTopic: 'control',
+                    //     biomedicalTopic: 'biomedical',
+                    // },
+                    // test connection
                     connection: {
-                        host: '192.168.0.200',
-                        port: 9001,
+                        host: 'test.mosquitto.org',
+                        port: 8081,
                         controlTopic: 'control',
                         biomedicalTopic: 'biomedical',
                     },
@@ -118,7 +151,7 @@
                 initMQTTClient() {
                     let data = this.controlData
                     const { host, port, controlTopic, biomedicalTopic } = this.connection
-                    const connectUrl = `ws://${host}:${port}`
+                    const connectUrl = `wss://${host}:${port}`
                     this.client = mqtt.connect(connectUrl)
                     this.client.on('connect', () => {
                         this.client.subscribe(biomedicalTopic)
@@ -128,8 +161,8 @@
                     this.client.on('message', (topic, message) => {
                         // parse oxygen data
                         let jsonData = JSON.parse(message.toString())
-                        this.oxygenData = parseFloat(jsonData.oxygen)
-                        this.percentage = 30
+                        this.oxygenData = jsonData.oxygen
+                        this.heartRateData = jsonData.heartRate
                     })
                 },
             },
