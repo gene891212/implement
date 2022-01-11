@@ -30,6 +30,7 @@ Arduino libraries
 
 - MQTTPubSubClient
 - ArduinoJson
+- MAX30100_PulseOximeter
 
 ## Usage
 

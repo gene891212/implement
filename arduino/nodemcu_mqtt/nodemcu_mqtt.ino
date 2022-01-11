@@ -56,13 +56,13 @@ void setup() {
 
 void loop() {
   mqtt.update(); // should be called
-  // publish message
-  //    static uint32_t prev_ms = millis();
-  //    if (millis() > prev_ms + 1000) {
-  //        prev_ms = millis();
-  //        mqtt.publish("/hello", "world");
-  //    }
-  sprintf(buf, "{\"oxygen\": \"%d\"}", random(30, 100));
-  mqtt.publish(biomedicalTopic, buf);
-  delay(1000);
+
+  // Asynchronously publish heart rate and oxidation
+  static uint32_t prev_ms = millis();
+  if (millis() > prev_ms + 1000) {
+    prev_ms = millis();
+    mqtt.publish("/hello", "world");
+    sprintf(buf, "{\"oxygen\": %d, \"heartRate\": %d}", random(30, 100), random(50, 160));
+    mqtt.publish(biomedicalTopic, buf);
+  }
 }
