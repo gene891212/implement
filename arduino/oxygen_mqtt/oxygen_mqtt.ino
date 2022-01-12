@@ -8,7 +8,8 @@
 
 WiFiClient client;
 MQTTPubSubClient mqtt;
-DynamicJsonDocument doc(200);
+DynamicJsonDocument controlDoc(200);
+DynamicJsonDocument biomedicalDoc(200);
 PulseOximeter pox;
 
 const char * ssid = "XVALEE";
@@ -17,7 +18,7 @@ const char * pass = "va6333le";
 const char * controlTopic = "control";
 const char * biomedicalTopic = "biomedical";
 
-// pin define
+// pin definition
 const int stressSensor = A0;
 const int pump = 2;
 const int reliefValve = 3;
@@ -59,6 +60,10 @@ void setup() {
   pinMode(pump, OUTPUT);
   digitalWrite(pump, LOW);
 
+  // initial relief valve pin output
+  pinMode(reliefValve, OUTPUT);
+  digitalWrite(reliefValve, LOW);
+
   // Initialize the PulseOximeter instance
   // Failures are generally due to an improper I2C wiring, missing power supply
   // or wrong target chip
@@ -73,11 +78,13 @@ void setup() {
 
   // subscribe topic and callback which is called when test2 has come
   mqtt.subscribe(controlTopic, [](const String & payload, const size_t size) {
-    deserializeJson(doc, payload);
-    start = doc["start"];
-    stress = doc["stress"];
-    // Serial.println(doc["pump"].as<bool>());
-    // serializeJson(doc, Serial);
+    deserializeJson(controlDoc, payload);
+    start = controlDoc["start"];
+    stress = controlDoc["stress"];
+
+    // print data to serial
+    serializeJson(controlDoc, Serial);
+    Serial.println();
   });
 }
 
@@ -85,21 +92,31 @@ void loop() {
   pox.update(); // Make sure to call update as fast as possible
   mqtt.update(); // should be called
 
+  // run asynchronously per second
   static uint32_t prev_ms = millis();
   if (millis() > prev_ms + 1000) {
-    // Asynchronously publish heart rate and oxidation
-    sprintf(buf, "{\"oxygen\": %d, \"heartRate\": %d}", pox.getSpO2(), pox.getHeartRate());
-    mqtt.publish(biomedicalTopic, buf);
+    // process sensor data to json
+    biomedicalDoc["oxygen"] = pox.getSpO2();
+    biomedicalDoc["heartRate"] = pox.getHeartRate();
+    String biomedicalData;
+    serializeJson(biomedicalDoc, biomedicalData);
 
-    // calibration stress sensor value
-    stressSensorValue = analogRead(stressSensor) - 548) * 37.5;
+    // publish heart rate and oxidation
+    mqtt.publish(biomedicalTopic, buf);
 
     // process logic when training is start
     if (start) {
       digitalWrite(reliefValve, LOW);
+
+      // calibrate stress sensor value
+      // TODO: confirm stressSensor data. stress is between 1 to 10
+      stressSensorValue = (analogRead(stressSensor) - 548) * 37.5;
+
       // open the pump when stress not enough
       if (stressSensorValue != stress) {
         digitalWrite(pump, HIGH);
+      } else {
+        digitalWrite(pump, LOW);
       }
     } else {
       digitalWrite(reliefValve, HIGH);

@@ -7,6 +7,7 @@
 WiFiClient client;
 MQTTPubSubClient mqtt;
 DynamicJsonDocument doc(200);
+DynamicJsonDocument biomedicalDoc(200);
 
 const char * ssid = "XVALEE";
 const char * pass = "va6333le";
@@ -51,6 +52,7 @@ void setup() {
     stress = doc["stress"];
     // Serial.println(doc["pump"].as<bool>());
     serializeJson(doc, Serial);
+    Serial.println();
   });
 }
 
@@ -61,8 +63,11 @@ void loop() {
   static uint32_t prev_ms = millis();
   if (millis() > prev_ms + 1000) {
     prev_ms = millis();
-    mqtt.publish("/hello", "world");
-    sprintf(buf, "{\"oxygen\": %d, \"heartRate\": %d}", random(30, 100), random(50, 160));
-    mqtt.publish(biomedicalTopic, buf);
+
+    biomedicalDoc["oxygen"] = random(30, 100);
+    biomedicalDoc["heartRate"] = random(50, 160);
+    String data;
+    serializeJson(biomedicalDoc, data);
+    mqtt.publish(biomedicalTopic, data);
   }
 }
