@@ -1,7 +1,9 @@
+import json
+
 from flask import Flask
 from flask_mqtt import Mqtt
 
-from models import OxygenData, db
+from models import Biomedical, db
 
 app = Flask(__name__)
 
@@ -11,14 +13,16 @@ app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_TLS_ENABLED'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
 
-mqtt = Mqtt(app)
 db.init_app(app)
-
+db.create_all(app=app)
+db.app = app
+mqtt = Mqtt(app)
 
 @app.route('/api/oxygen/<int:oxygen>', methods=["POST"])
 @app.route('/api/oxygen/<float:oxygen>', methods=["POST"])
 def save_oxygen(oxygen):
-    data = OxygenData(value=oxygen)
+    # FIXME: add oxygen and heart rate to parameter
+    data = Biomedical(value=oxygen)
     db.session.add(data)
     db.session.commit()
     return data.as_dict()
@@ -27,32 +31,37 @@ def save_oxygen(oxygen):
 @app.route('/api/oxygen', methods=["GET"])
 @app.route('/api/oxygen/', methods=["GET"])
 def get_oxygen():
-    data = OxygenData.query.order_by(-OxygenData.id).first()
+    data = Biomedical.query.order_by(-Biomedical.id).first()
     return data.as_dict()
 
 
 @app.route('/api/oxygens', methods=["GET"])
 def get_oxygens():
-    data = OxygenData.query.all()
+    # FIXME: modify return value
+    data = Biomedical.query.all()
     print(data)
     return {"oxygens": [i.as_dict() for i in data]}
 
 
 @app.route('/')
 def hello():
-    mqtt.publish('test2', 'from flask')
+    mqtt.publish('control', 'from flask')
     return 'Hello, World!'
 
 
 @mqtt.on_connect()
 def handle_connect(client, userdata, flags, rc):
-    mqtt.subscribe('test2')
+    mqtt.subscribe('biomedical')
 
 
 @mqtt.on_message()
 def handle_mqtt_message(client, userdata, message):
-    data = dict(
-        topic=message.topic,
-        payload=message.payload.decode()
+    msg = message.payload.decode()
+    biomedical = json.loads(msg)
+    print(biomedical)
+    data = Biomedical(
+        biomedical['oxygen'],
+        biomedical['heartRate'],
     )
-    print(data)
+    db.session.add(data)
+    db.session.commit()

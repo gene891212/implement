@@ -5,19 +5,18 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-class OxygenData(db.Model):
+class Biomedical(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    value = db.Column(db.Float, nullable=False)
+    oxygen = db.Column(db.Float, nullable=False)
+    heart_beat = db.Column(db.Float, nullable=False)
     save_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
-    def __init__(self, value) -> None:
-        self.value = value
+    def __init__(self, oxygen, heart_beat) -> None:
+        self.oxygen = oxygen
+        self.heart_beat = heart_beat
 
     def __repr__(self):
-        return f'<Oxygen {self.value}%>'
-
-    def __str__(self):
-        return f'Oxygen: {self.value}%'
+        return f'<Biomedical {self.oxygen} {self.heart_beat}>'
 
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
