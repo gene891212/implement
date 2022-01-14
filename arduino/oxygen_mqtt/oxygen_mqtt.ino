@@ -6,11 +6,15 @@
 
 #include "MAX30100_PulseOximeter.h"
 
+#define REPORTING_PERIOD_MS 1000
+
 WiFiClient client;
 MQTTPubSubClient mqtt;
 DynamicJsonDocument controlDoc(200);
 DynamicJsonDocument biomedicalDoc(200);
 PulseOximeter pox;
+
+uint32_t tsLastReport = 0;
 
 const char * ssid = "XVALEE";
 const char * pass = "va6333le";
@@ -26,7 +30,6 @@ const int reliefValve = 3;
 int stressSensorValue = 0;
 int stress;
 bool start;
-char buf[40];
 
 void setup() {
   Serial.begin(115200);
@@ -93,16 +96,15 @@ void loop() {
   mqtt.update(); // should be called
 
   // run asynchronously per second
-  static uint32_t prev_ms = millis();
-  if (millis() > prev_ms + 1000) {
+  if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
     // process sensor data to json
-    biomedicalDoc["oxygen"] = pox.getSpO2();
-    biomedicalDoc["heartRate"] = pox.getHeartRate();
+    biomedicalDoc["oxygen"] = round(pox.getSpO2());
+    biomedicalDoc["heartRate"] = round(pox.getHeartRate());
     String biomedicalData;
     serializeJson(biomedicalDoc, biomedicalData);
 
     // publish heart rate and oxidation
-    mqtt.publish(biomedicalTopic, buf);
+    mqtt.publish(biomedicalTopic, biomedicalData);
 
     // process logic when training is start
     if (start) {
@@ -121,5 +123,7 @@ void loop() {
     } else {
       digitalWrite(reliefValve, HIGH);
     }
+
+    tsLastReport = millis();
   }
 }
